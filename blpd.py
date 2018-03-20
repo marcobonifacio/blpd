@@ -1,22 +1,8 @@
-"""
-blpd
-
-Module to make syncronous requests to Bloomberg, returning a Pandas dataframe.
-Based on native Bloomberg API.
-
-Functions:
-    bdp: reference request, similar to Excel BDP.
-    bdh: historical request, similar to Excel BDH.
-"""
-
 import blpapi as blp
 import datetime as dt
 from optparse import OptionParser
 import pandas as pd
 
-#------------------------------------------------------------------------------
-# Constants
-#------------------------------------------------------------------------------
 
 SECURITY_DATA = blp.Name('securityData')
 SECURITY = blp.Name('security')
@@ -26,9 +12,6 @@ FIELD_ID = blp.Name('fieldId')
 SECURITY_ERROR = blp.Name('securityError')
 ERROR_INFO = blp.Name('errorInfo')
 
-#------------------------------------------------------------------------------
-# Functions
-#------------------------------------------------------------------------------
 
 def parseCmdLine():
     """ Parses command line. """

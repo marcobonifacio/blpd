@@ -1,12 +1,20 @@
 import blpapi as blp
 import datetime as dt
-from optparse import OptionParser
 import pandas as pd
+
+
+SECURITY_DATA = blp.Name('securityData')
+SECURITY = blp.Name('security')
+FIELD_DATA = blp.Name('fieldData')
+FIELD_EXCEPTIONS = blp.Name('fieldExceptions')
+FIELD_ID = blp.Name('fieldId')
+SECURITY_ERROR = blp.Name('securityError')
+ERROR_INFO = blp.Name('errorInfo')
 
 
 def formatSecurity(security: str, prefix: str) -> str:
     """ Format a security in a valid Bloomberg syntax. """
-    prefixes = ['ticker', 'cusip', 'wpk', 'isin', 'buid', 'sedol1', 'sedol2', 
+    prefixes = ['ticker', 'cusip', 'wpk', 'isin', 'buid', 'sedol1', 'sedol2',
                 'sicovam', 'common', 'bsid', 'svm', 'cins', 'cats', 'bbgid']
     if prefix == 'ticker':
         return(security)
@@ -20,16 +28,26 @@ def formatSecurity(security: str, prefix: str) -> str:
 
 def formatSecsList(securities: list, prefix) -> list:
     """ Format a list of securities in a valid Bloomberg syntax. """
-    
-            
+    output = []
+    if type(prefix) == 'str':
+        for s in securities:
+            output.append(formatSecurity(s, prefix))
+    elif type(prefix) == 'list':
+        if len(prefix) == len(securities):
+            for s, p in zip(securities, prefix):
+                output.append(formatSecurity(s, p))
+        else:
+            print('Securities and prefixes length do not match')
+    else:
+        print('Prefix type is not correct')
 
-SECURITY_DATA = blp.Name('securityData')
-SECURITY = blp.Name('security')
-FIELD_DATA = blp.Name('fieldData')
-FIELD_EXCEPTIONS = blp.Name('fieldExceptions')
-FIELD_ID = blp.Name('fieldId')
-SECURITY_ERROR = blp.Name('securityError')
-ERROR_INFO = blp.Name('errorInfo')
+
+class BLPWrapper():
+    """ Python wrapper of Bloomberg API to mimick Excel API Request / Response
+
+
+
+
 
 
 def parseCmdLine():
@@ -56,7 +74,7 @@ def parseCmdLine():
 
 def formatSecs(securities, prefix=None):
     """ Format valid securities. """
-    
+
 
 def bdp(securities, fields, prefix=None, rows=False, verbose=False, **kwargs):
     """ Sends a reference request to Bloomberg.

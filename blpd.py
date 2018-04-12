@@ -12,17 +12,20 @@ FIELD_ID = blp.Name('fieldId')
 SECURITY_ERROR = blp.Name('securityError')
 ERROR_INFO = blp.Name('errorInfo')
 OVERRIDES = blp.Name('overrides')
+CATEGORY = blp.Name('category')
+MESSAGE = blp.Name('message')
+SUBCATEGORY = blp.Name('subcategory')
 
 
 def _formatSecurity(security: str, prefix: str) -> str:
     """ Format a security in a valid Bloomberg syntax. """
     prefixes = ['ticker', 'cusip', 'wpk', 'isin', 'buid', 'sedol1', 'sedol2',
                 'sicovam', 'common', 'bsid', 'svm', 'cins', 'cats', 'bbgid']
-    if prefix == 'ticker':
+    if prefix.lower() == 'ticker':
         return(security)
     else:
-        if prefix in prefixes:
-            return(f'\{prefix}\{security}')
+        if prefix.lower() in prefixes:
+            return(f'/{prefix.lower()}/{security}')
         else:
             print('Topic prefix is not correct') # Raise error
             return()
@@ -115,7 +118,7 @@ class BLP():
             self.request.append('fields', fld)
 
 
-    def _addArguments(self, kwargs) -> None:
+    def _addArguments(self, kwargs: dict) -> None:
         """ Manage request arguments. """
         for k in kwargs:
             if k == 'overrides':
@@ -129,11 +132,23 @@ class BLP():
                 self.request.set(k, kwargs[k]) # To be managed
 
 
+    def _printError(self, name, element, ret) -> None:
+        """ Print security or field error. """
+        category = element.getElement(CATEGORY)
+        errmsg = element.getElement(MESSAGE)
+        subcat = element.getElement(SUBCATEGORY)
+        if ret is True:
+            print(f'Warning:\n{name}\n{category}{errmsg}{subcat}')
+        else:
+            print(f'Warning:\n{name}{category}{errmsg}{subcat}')
+
+
     def bdp(self, securities: Union['str', 'list'],
     fields: Union['str', 'list'], prefix: Union['str', 'list']='ticker',
-    transpose: bool=False, **kwargs) -> pd.DataFrame:
+    **kwargs) -> pd.DataFrame:
         """ Send a reference request to Bloomberg (mimicking Excel function
         BDP). """
+        flderr = False
         self.request = self.refDataService.createRequest('ReferenceDataRequest')
         self.securities = securities
         self.fields = fields
@@ -160,9 +175,16 @@ class BLP():
                         for field in fieldsData.elements():
                             data.loc[name, str(field.name())] = \
                             field.getValueAsString()
+                        if secData.hasElement(SECURITY_ERROR):
+                            secError = secData.getElement(SECURITY_ERROR)
+                            self._printError(name, secError, True)
+                        fieldsException = secData.getElement(FIELD_EXCEPTIONS)
+                        for fieldEx in fieldsException.values():
+                            if fieldEx.hasElement(FIELD_ID) and flderr is False:
+                                flderr = True
+                                fieldId = fieldEx.getElement(FIELD_ID)
+                                errorInfo = fieldEx.getElement(ERROR_INFO)
+                                self._printError(fieldId, errorInfo, False)
             if ev.eventType() == blp.Event.RESPONSE:
                 break
-        if transpose is False:
-            return(data)
-        else:
-            return(data.T)
+        return(data)

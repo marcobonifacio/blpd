@@ -11,6 +11,7 @@ FIELD_EXCEPTIONS = blp.Name('fieldExceptions')
 FIELD_ID = blp.Name('fieldId')
 SECURITY_ERROR = blp.Name('securityError')
 ERROR_INFO = blp.Name('errorInfo')
+OVERRIDES = blp.Name('overrides')
 
 
 def _formatSecurity(security: str, prefix: str) -> str:
@@ -114,6 +115,20 @@ class BLP():
             self.request.append('fields', fld)
 
 
+    def _addArguments(self, kwargs) -> None:
+        """ Manage request arguments. """
+        for k in kwargs:
+            if k == 'overrides':
+                overrides = self.request.getElement(OVERRIDES)
+                o = []
+                for key, value in kwargs[k].items():
+                    o.append(overrides.appendElement())
+                    o[-1].setElement(FIELD_ID, key)
+                    o[-1].setElement('value', value)
+            else:
+                self.request.set(k, kwargs[k]) # To be managed
+
+
     def bdp(self, securities: Union['str', 'list'],
     fields: Union['str', 'list'], prefix: Union['str', 'list']='ticker',
     transpose: bool=False, **kwargs) -> pd.DataFrame:
@@ -125,5 +140,29 @@ class BLP():
         self.prefix = prefix
         self._addSecurities()
         self._addFields()
+        self._addArguments(kwargs)
         if self.verbose is True:
-            print(f'The request is: {self.request}')
+            print(f'Sending request: {self.request}')
+        cid = self.session.sendRequest(self.request)
+        if self.verbose is True:
+            print(f'Correlation ID is: {cid}')
+        data = pd.DataFrame()
+        while(True):
+            ev = self.session.nextEvent(500)
+            for msg in ev:
+                if cid in msg.correlationIds():
+                    securitiesData = msg.getElement(SECURITY_DATA)
+                    if self.verbose is True:
+                        print(f'Securities data: {securitiesData}')
+                    for secData in securitiesData.values():
+                        name = secData.getElementAsString(SECURITY)
+                        fieldsData = secData.getElement(FIELD_DATA)
+                        for field in fieldsData.elements():
+                            data.loc[name, str(field.name())] = \
+                            field.getValueAsString()
+            if ev.eventType() == blp.Event.RESPONSE:
+                break
+        if transpose is False:
+            return(data)
+        else:
+            return(data.T)

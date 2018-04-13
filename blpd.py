@@ -132,23 +132,11 @@ class BLP():
                 self.request.set(k, kwargs[k]) # To be managed
 
 
-    def _printError(self, name, element, ret) -> None:
-        """ Print security or field error. """
-        category = element.getElement(CATEGORY)
-        errmsg = element.getElement(MESSAGE)
-        subcat = element.getElement(SUBCATEGORY)
-        if ret is True:
-            print(f'Warning:\n{name}\n{category}{errmsg}{subcat}')
-        else:
-            print(f'Warning:\n{name}{category}{errmsg}{subcat}')
-
-
     def bdp(self, securities: Union['str', 'list'],
     fields: Union['str', 'list'], prefix: Union['str', 'list']='ticker',
     **kwargs) -> pd.DataFrame:
         """ Send a reference request to Bloomberg (mimicking Excel function
         BDP). """
-        flderr = False
         self.request = self.refDataService.createRequest('ReferenceDataRequest')
         self.securities = securities
         self.fields = fields
@@ -162,6 +150,7 @@ class BLP():
         if self.verbose is True:
             print(f'Correlation ID is: {cid}')
         data = pd.DataFrame()
+        exceptions = pd.DataFrame()
         while(True):
             ev = self.session.nextEvent(500)
             for msg in ev:
@@ -177,14 +166,25 @@ class BLP():
                             field.getValueAsString()
                         if secData.hasElement(SECURITY_ERROR):
                             secError = secData.getElement(SECURITY_ERROR)
-                            self._printError(name, secError, True)
+                            exceptions.loc[name, 'Field'] = None
+                            exceptions.loc[name, 'Category'] = \
+                            secError.getElementAsString(CATEGORY)
+                            exceptions.loc[name, 'Subcategory'] = \
+                            secError.getElementAsString(SUBCATEGORY)
+                            exceptions.loc[name, 'Message'] = \
+                            secError.getElementAsString(MESSAGE)
                         fieldsException = secData.getElement(FIELD_EXCEPTIONS)
                         for fieldEx in fieldsException.values():
-                            if fieldEx.hasElement(FIELD_ID) and flderr is False:
-                                flderr = True
-                                fieldId = fieldEx.getElement(FIELD_ID)
+                            if fieldEx.hasElement(FIELD_ID):
+                                fieldId = fieldEx.getElementAsString(FIELD_ID)
                                 errorInfo = fieldEx.getElement(ERROR_INFO)
-                                self._printError(fieldId, errorInfo, False)
+                                exceptions.loc[name, 'Field'] = fieldId
+                                exceptions.loc[name, 'Category'] = \
+                                errorInfo.getElementAsString(CATEGORY)
+                                exceptions.loc[name, 'Subcategory'] = \
+                                errorInfo.getElementAsString(SUBCATEGORY)
+                                exceptions.loc[name, 'Message'] = \
+                                errorInfo.getElementAsString(MESSAGE)
             if ev.eventType() == blp.Event.RESPONSE:
                 break
-        return(data)
+        return(data, exceptions)

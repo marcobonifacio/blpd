@@ -33,9 +33,11 @@ def test_bdp_string_isin_verbose():
 def test_bdp_string_overrides_verbose():
     """ Test BDP function with overrides. """
     conn = blpd.BLP(verbose=True)
-    df, ex = conn.bdp('UCG IM Equity', 'NAME', overrides={'REL_INDEX': 'ITSMBANC'})
-    print(df)
-    print(ex)
+    df1, ex1 = conn.bdp('UCG IM Equity', 'BETA_ADJ_OVERRIDABLE')
+    df2, ex2 = conn.bdp('UCG IM Equity', 'BETA_ADJ_OVERRIDABLE',
+    overrides={'BETA_OVERRIDE_REL_INDEX': 'ITSMBANC'})
+    print(df1)
+    print(df2)
     conn.close()
 
 
@@ -51,7 +53,8 @@ def test_bdp_string_bad_sec_verbose():
 def test_bdp_list_verbose():
     """ Test BDP function with a list of tickers. """
     conn = blpd.BLP(verbose=True)
-    df, ex = conn.bdp(['UCG IM Equity', 'ISP IM Equity'], ['NAME', 'COUNTRY_FULL_NAME'])
+    df, ex = conn.bdp(['UCG IM Equity', 'ISP IM Equity'],
+    ['NAME', 'COUNTRY_FULL_NAME'])
     print(df)
     print(ex)
     conn.close()
@@ -69,7 +72,8 @@ def test_bdp_list_missing_data_verbose():
 def test_bdp_list_bad_sec_verbose():
     """ Test BDP function with a good and a bad security ticker. """
     conn = blpd.BLP(verbose=True)
-    df, ex = conn.bdp(['UCG IM Equity', 'UCT IM Equity'], ['NAME', 'COUNTRY_FULL_NAME'])
+    df, ex = conn.bdp(['UCG IM Equity', 'UCT IM Equity'],
+    ['NAME', 'COUNTRY_FULL_NAME'])
     print(df)
     print(ex)
     conn.close()
@@ -86,7 +90,7 @@ def test_bdp_list_bad_fld_verbose():
 
 def main():
     """ Run the tests. """
-    test_bdp_list_bad_fld_verbose()
+    test_bdp_string_verbose()
 
 
 if __name__ == '__main__':

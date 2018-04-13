@@ -118,32 +118,34 @@ class BLP():
             self.request.append('fields', fld)
 
 
-    def _addArguments(self, kwargs: dict) -> None:
+    def _addOverrides(self) -> None:
         """ Manage request arguments. """
-        for k in kwargs:
-            if k == 'overrides':
-                overrides = self.request.getElement(OVERRIDES)
-                o = []
-                for key, value in kwargs[k].items():
-                    o.append(overrides.appendElement())
-                    o[-1].setElement(FIELD_ID, key)
-                    o[-1].setElement('value', value)
-            else:
-                self.request.set(k, kwargs[k]) # To be managed
+        if self.overrides is None:
+            pass
+        elif isinstance(self.overrides, dict):
+            overrides = self.request.getElement(OVERRIDES)
+            oslist = []
+            for key, value in self.overrides.items():
+                oslist.append(overrides.appendElement())
+                oslist[-1].setElement(FIELD_ID, key)
+                oslist[-1].setElement('value', value)
+        else:
+            print('Overrides must be a dict') # Raise error
 
 
     def bdp(self, securities: Union['str', 'list'],
     fields: Union['str', 'list'], prefix: Union['str', 'list']='ticker',
-    **kwargs) -> pd.DataFrame:
+    overrides: dict=None) -> pd.DataFrame:
         """ Send a reference request to Bloomberg (mimicking Excel function
         BDP). """
         self.request = self.refDataService.createRequest('ReferenceDataRequest')
         self.securities = securities
         self.fields = fields
         self.prefix = prefix
+        self.overrides = overrides
         self._addSecurities()
         self._addFields()
-        self._addArguments(kwargs)
+        self._addOverrides()
         if self.verbose is True:
             print(f'Sending request: {self.request}')
         cid = self.session.sendRequest(self.request)

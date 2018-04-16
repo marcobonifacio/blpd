@@ -94,7 +94,7 @@ class BLP():
             self.active = False
 
 
-    def _addSecurities(self) -> list:
+    def _addSecurities(self) -> None:
         """ Add a list of securities to a request. """
         if isinstance(self.securities, str):
             self.securities = [self.securities]
@@ -106,7 +106,7 @@ class BLP():
             self.request.append('securities', sec)
 
 
-    def _addFields(self) -> list:
+    def _addFields(self) -> None:
         """ Add a list of fields to a request. """
         if isinstance(self.fields, str):
             self.fields = [self.fields]
@@ -116,6 +116,86 @@ class BLP():
             print('Fields must be a string or a list') # Raise error
         for fld in self.fields:
             self.request.append('fields', fld)
+
+
+    def _addDays(self) -> None:
+        """ Add fill days options to a historical request. """
+        options = {'A': 'ALL_CALENDAR_DAYS',
+                   'T': 'ACTIVE_DAYS_ONLY',
+                   'W': 'NON_TRADING_WEEKDAYS'}
+        try:
+            self.request.set('nonTradingDayFillOption', options[self.days])
+        except KeyError:
+            print('Options are A / T / W')
+
+
+    def _addFill(self) -> None:
+        """ Add fill method options to a historical request. """
+        options = {'N': 'NIL_VALUE',
+                   'P': 'PREVIOUS_VALUE'}
+        try:
+            self.request.set('nonTradingDayFillMethod', options[self.fill])
+        except KeyError:
+            print('Options are N / P')
+
+
+    def _addPeriod(self) -> None:
+        """ Add periodicity options to a historical request. """
+        optionsAdj = {'A': 'ACTUAL',
+                      'C': 'CALENDAR',
+                      'F': 'FISCAL'}
+        optionsSel = {'D': 'DAILY',
+                      'M': 'MONTHLY',
+                      'Q': 'QUARTERLY',
+                      'S': 'SEMI_ANNUALLY',
+                      'W': 'WEEKLY',
+                      'Y': 'YEARLY'}
+        try:
+            self.request.set('periodicityAdjustment', optionsAdj[self.per[0]])
+            self.request.set('periodicitySelection', optionsAdj[self.per[1]])
+        except KeyError:
+            print('Options are A / C / F and D / M / Q / S / W / Y')
+
+
+    def _addQuoteType(self) -> None:
+            """ Add quote type options to a historical request. """
+            options = {'P': 'PRICING_OPTION_PRICE',
+                       'Y': 'PRICING_OPTION_YIELD'}
+            try:
+                self.request.set('pricingOption', options[self.qtTyp])
+            except KeyError:
+                print('Options are P / Y')
+
+
+    def _addQuote(self) -> None:
+            """ Add quote options to a historical request. """
+            options = {'C': 'OVERRIDE_OPTION_CLOSE',
+                       'G': 'OVERRIDE_OPTION_GPA'}
+            try:
+                self.request.set('overrideOption', options[self.quote])
+            except KeyError:
+                print('Options are C / G')
+
+
+    def _addMandatoryOptions(self) -> None:
+        """ Add mandatory options to a historical request. """
+        self.request.set('returnRelativeDate', self.dtFmt)
+        self._addDays()
+        self._addFill()
+        self._addPeriod()
+        self._addQuoteType()
+        self._addQuote()
+        self.request.set('adjustmentFollowDPDF', self.useDPDF)
+
+
+    def _addFacultativeOptions(self) -> None:
+        """ Add facultative options to a historical request. """
+        self.request.set('calendarCodeOverride', self.cdr)
+        self.request.set('currency', self.fx)
+        self.request.set('maxDataPoints', self.points)
+        self.request.set('adjustmentAbnormal', self.cshAdjAbnormal)
+        self.request.set('adjustmentSplit', self.capChg)
+        self.request.set('adjustmentNormal', self.cshAdjNormal)
 
 
     def _addOverrides(self) -> None:
@@ -190,3 +270,41 @@ class BLP():
             if ev.eventType() == blp.Event.RESPONSE:
                 break
         return(data, exceptions)
+
+
+    def bdh(self, securities: Union['str', 'list'],
+    field: Union['str', 'list'], startDate: str, endDate: str,
+    prefix: Union['str', 'list']='ticker', cdr: str=None, fx: str=None,
+    dtFmt: bool=False, days: str='W', fill: str='P', per: str='CD',
+    points: int=None, qtTyp: str='Y', quote: str='C', useDPDF: bool=True,
+    cshAdjAbnormal: bool=None, capChg: bool=None, cshAdjNormal: bool=None,
+    overrides: dict=None) -> pd.DataFrame:
+        """ Send a historical request to Bloomberg (mimicking Excel function
+        BDH). """
+        self.request = self.refDataService.createRequest('HistoricalDataRequest')
+        self.securities = securities
+        self.fields = fields
+        self.startDate = startDate
+        self.endDate = endDate
+        self.prefix = prefix
+        self.cdr = cdr
+        self.fx = fx
+        self.dtFmt = dtFmt
+        self.days = days
+        self.fill = fill
+        self.per = per
+        self.points = points
+        self.qtTyp = qtTyp
+        self.quote = quote
+        self.useDPDF = useDPDF
+        self.cshAdjAbnormal = cshAdjAbnormal
+        self.capChg = capChg
+        self.cshAdjNormal = cshAdjNormal
+        self.overrides = overrides
+        self._addSecurities()
+        self._addFields()
+        self.request.set('startDate', self.startDate)
+        self.request.set('endDate', self.endDate)
+        self._addMandatoryOptions()
+        self._addFacultativeOptions()
+        self._addOverrides()

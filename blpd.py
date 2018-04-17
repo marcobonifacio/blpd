@@ -152,7 +152,7 @@ class BLP():
                       'Y': 'YEARLY'}
         try:
             self.request.set('periodicityAdjustment', optionsAdj[self.per[0]])
-            self.request.set('periodicitySelection', optionsAdj[self.per[1]])
+            self.request.set('periodicitySelection', optionsSel[self.per[1]])
         except KeyError:
             print('Options are A / C / F and D / M / Q / S / W / Y')
 
@@ -190,12 +190,30 @@ class BLP():
 
     def _addFacultativeOptions(self) -> None:
         """ Add facultative options to a historical request. """
-        self.request.set('calendarCodeOverride', self.cdr)
-        self.request.set('currency', self.fx)
-        self.request.set('maxDataPoints', self.points)
-        self.request.set('adjustmentAbnormal', self.cshAdjAbnormal)
-        self.request.set('adjustmentSplit', self.capChg)
-        self.request.set('adjustmentNormal', self.cshAdjNormal)
+        if self.cdr is None:
+            pass
+        else:
+            self.request.set('calendarCodeOverride', self.cdr)
+        if self.fx is None:
+            pass
+        else:
+            self.request.set('currency', self.fx)
+        if self.points is None:
+            pass
+        else:
+            self.request.set('maxDataPoints', self.points)
+        if self.cshAdjAbnormal is None:
+            pass
+        else:
+            self.request.set('adjustmentAbnormal', self.cshAdjAbnormal)
+        if self.capChg is None:
+            pass
+        else:
+            self.request.set('adjustmentSplit', self.capChg)
+        if self.cshAdjNormal is None:
+            pass
+        else:
+            self.request.set('adjustmentNormal', self.cshAdjNormal)
 
 
     def _addOverrides(self) -> None:
@@ -273,7 +291,7 @@ class BLP():
 
 
     def bdh(self, securities: Union['str', 'list'],
-    field: Union['str', 'list'], startDate: str, endDate: str,
+    fields: Union['str', 'list'], startDate: str, endDate: str='',
     prefix: Union['str', 'list']='ticker', cdr: str=None, fx: str=None,
     dtFmt: bool=False, days: str='W', fill: str='P', per: str='CD',
     points: int=None, qtTyp: str='Y', quote: str='C', useDPDF: bool=True,
@@ -308,3 +326,47 @@ class BLP():
         self._addMandatoryOptions()
         self._addFacultativeOptions()
         self._addOverrides()
+        if self.verbose is True:
+            print(f'Sending request: {self.request}')
+        cid = self.session.sendRequest(self.request)
+        if self.verbose is True:
+            print(f'Correlation ID is: {cid}')
+        data = pd.DataFrame()
+        exceptions = pd.DataFrame()
+        while(True):
+            ev = self.session.nextEvent(500)
+            for msg in ev:
+                if cid in msg.correlationIds():
+                    securitiesData = msg.getElement(SECURITY_DATA)
+                    if self.verbose is True:
+                        print(f'Securities data: {securitiesData}')
+                #    for secData in securitiesData.values():
+                #        name = secData.getElementAsString(SECURITY)
+                #        fieldsData = secData.getElement(FIELD_DATA)
+                #        for field in fieldsData.elements():
+                #            data.loc[name, str(field.name())] = \
+                #            field.getValueAsString()
+                #        if secData.hasElement(SECURITY_ERROR):
+                #            secError = secData.getElement(SECURITY_ERROR)
+                #            exceptions.loc[name, 'Field'] = None
+                #            exceptions.loc[name, 'Category'] = \
+                #            secError.getElementAsString(CATEGORY)
+                #            exceptions.loc[name, 'Subcategory'] = \
+                #            secError.getElementAsString(SUBCATEGORY)
+                #            exceptions.loc[name, 'Message'] = \
+                #            secError.getElementAsString(MESSAGE)
+                #        fieldsException = secData.getElement(FIELD_EXCEPTIONS)
+                #        for fieldEx in fieldsException.values():
+                #            if fieldEx.hasElement(FIELD_ID):
+                #                fieldId = fieldEx.getElementAsString(FIELD_ID)
+                #                errorInfo = fieldEx.getElement(ERROR_INFO)
+                #                exceptions.loc[name, 'Field'] = fieldId
+                #                exceptions.loc[name, 'Category'] = \
+                #                errorInfo.getElementAsString(CATEGORY)
+                #                exceptions.loc[name, 'Subcategory'] = \
+                #                errorInfo.getElementAsString(SUBCATEGORY)
+                #                exceptions.loc[name, 'Message'] = \
+                #                errorInfo.getElementAsString(MESSAGE)
+            if ev.eventType() == blp.Event.RESPONSE:
+                break
+        return(data, exceptions)

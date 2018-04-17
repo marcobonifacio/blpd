@@ -88,9 +88,54 @@ def test_bdp_list_bad_fld_verbose():
     conn.close()
 
 
+def test_bdh_string_verbose():
+    """ Test BDH function, verbose mode. """
+    conn = blpd.BLP(verbose=True)
+    df, ex = conn.bdh('UCG IM Equity', 'PX_LAST', '20180410')
+    print(df)
+    print(ex)
+    conn.close()
+
+
+def test_bdh_string_cdr_verbose():
+    """ Test BDH function, verbose mode. """
+    conn = blpd.BLP(verbose=True)
+    df, ex = conn.bdh('UCG IM Equity', 'PX_LAST', '20180410', cdr='IT')
+    print(df)
+    print(ex)
+    conn.close()
+
+
+def test_bdh_string_bad_cdr_verbose():
+    """ Test BDH function, verbose mode. """
+    conn = blpd.BLP(verbose=True)
+    df, ex = conn.bdh('UCG IM Equity', 'PX_LAST', '20180410', cdr='IW')
+    print(df)
+    print(ex)
+    conn.close()
+
+
+def test_bdh_string_fx_verbose():
+    """ Test BDH function, verbose mode. """
+    conn = blpd.BLP(verbose=True)
+    df, ex = conn.bdh('UCG IM Equity', 'PX_LAST', '20180410', fx='USD')
+    print(df)
+    print(ex)
+    conn.close()
+
+
+def test_bdh_string_bad_fx_verbose():
+    """ Test BDH function, verbose mode. """
+    conn = blpd.BLP(verbose=True)
+    df, ex = conn.bdh('UCG IM Equity', 'PX_LAST', '20180410', fx='USP')
+    print(df)
+    print(ex)
+    conn.close() # Raise Exception
+
+
 def main():
     """ Run the tests. """
-    test_bdp_string_verbose()
+    test_bdh_string_bad_fx_verbose()
 
 
 if __name__ == '__main__':

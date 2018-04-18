@@ -263,7 +263,8 @@ class BLP():
                         fieldsData = secData.getElement(FIELD_DATA)
                         for field in fieldsData.elements():
                             data.loc[name, str(field.name())] = \
-                            field.getValueAsString()
+                            pd.to_numeric(field.getValueAsString(),
+                            errors='ignore')
                         if secData.hasElement(SECURITY_ERROR):
                             secError = secData.getElement(SECURITY_ERROR)
                             exceptions.loc[name, 'Field'] = None
@@ -331,21 +332,28 @@ class BLP():
         cid = self.session.sendRequest(self.request)
         if self.verbose is True:
             print(f'Correlation ID is: {cid}')
-        data = pd.DataFrame()
+        datadict = {}
         exceptions = pd.DataFrame()
         while(True):
             ev = self.session.nextEvent(500)
             for msg in ev:
                 if cid in msg.correlationIds():
-                    securitiesData = msg.getElement(SECURITY_DATA)
+                    secData = msg.getElement(SECURITY_DATA)
                     if self.verbose is True:
-                        print(f'Securities data: {securitiesData}')
-                #    for secData in securitiesData.values():
-                #        name = secData.getElementAsString(SECURITY)
-                #        fieldsData = secData.getElement(FIELD_DATA)
-                #        for field in fieldsData.elements():
-                #            data.loc[name, str(field.name())] = \
-                #            field.getValueAsString()
+                        print(f'Securities data: {secData}')
+                    df = pd.DataFrame()
+                    name = secData.getElementAsString(SECURITY)
+                    fieldsData = secData.getElement(FIELD_DATA)
+                    for fData in fieldsData.values():
+                        for field in fData.elements():
+                            if str(field.name()) == 'date':
+                                date = pd.to_datetime(field.getValueAsString(),
+                                format='%Y-%m-%d')
+                            else:
+                                df.loc[date, str(field.name())] = \
+                                pd.to_numeric(field.getValueAsString(),
+                                errors='ignore')
+                            datadict[name] = df
                 #        if secData.hasElement(SECURITY_ERROR):
                 #            secError = secData.getElement(SECURITY_ERROR)
                 #            exceptions.loc[name, 'Field'] = None
@@ -369,4 +377,5 @@ class BLP():
                 #                errorInfo.getElementAsString(MESSAGE)
             if ev.eventType() == blp.Event.RESPONSE:
                 break
+        data = pd.concat(datadict.values(), keys=datadict.keys(), axis=1)
         return(data, exceptions)

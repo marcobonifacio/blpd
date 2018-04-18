@@ -133,9 +133,18 @@ def test_bdh_string_bad_fx_verbose():
     conn.close() # Raise Exception
 
 
+def test_bdh_list_verbose():
+    """ Test BDH function, verbose mode. """
+    conn = blpd.BLP(verbose=True)
+    df, ex = conn.bdh(['UCG IM Equity', 'ISP IM Equity'], ['PX_LAST', 'CUR_MKT_CAP'], '20180410')
+    print(df)
+    print(ex)
+    conn.close()
+
+
 def main():
     """ Run the tests. """
-    test_bdh_string_bad_fx_verbose()
+    test_bdh_list_verbose()
 
 
 if __name__ == '__main__':

@@ -341,9 +341,30 @@ class BLP():
                     secData = msg.getElement(SECURITY_DATA)
                     if self.verbose is True:
                         print(f'Securities data: {secData}')
-                    df = pd.DataFrame()
                     name = secData.getElementAsString(SECURITY)
+                    if secData.hasElement(SECURITY_ERROR):
+                        secError = secData.getElement(SECURITY_ERROR)
+                        exceptions.loc[name, 'Field'] = None
+                        exceptions.loc[name, 'Category'] = \
+                        secError.getElementAsString(CATEGORY)
+                        exceptions.loc[name, 'Subcategory'] = \
+                        secError.getElementAsString(SUBCATEGORY)
+                        exceptions.loc[name, 'Message'] = \
+                        secError.getElementAsString(MESSAGE)
+                    df = pd.DataFrame()
                     fieldsData = secData.getElement(FIELD_DATA)
+                    fieldsException = secData.getElement(FIELD_EXCEPTIONS)
+                    for fieldEx in fieldsException.values():
+                        if fieldEx.hasElement(FIELD_ID):
+                            fieldId = fieldEx.getElementAsString(FIELD_ID)
+                            errorInfo = fieldEx.getElement(ERROR_INFO)
+                            exceptions.loc[name, 'Field'] = fieldId
+                            exceptions.loc[name, 'Category'] = \
+                            errorInfo.getElementAsString(CATEGORY)
+                            exceptions.loc[name, 'Subcategory'] = \
+                            errorInfo.getElementAsString(SUBCATEGORY)
+                            exceptions.loc[name, 'Message'] = \
+                            errorInfo.getElementAsString(MESSAGE)
                     for fData in fieldsData.values():
                         for field in fData.elements():
                             if str(field.name()) == 'date':
@@ -354,27 +375,6 @@ class BLP():
                                 pd.to_numeric(field.getValueAsString(),
                                 errors='ignore')
                             datadict[name] = df
-                #        if secData.hasElement(SECURITY_ERROR):
-                #            secError = secData.getElement(SECURITY_ERROR)
-                #            exceptions.loc[name, 'Field'] = None
-                #            exceptions.loc[name, 'Category'] = \
-                #            secError.getElementAsString(CATEGORY)
-                #            exceptions.loc[name, 'Subcategory'] = \
-                #            secError.getElementAsString(SUBCATEGORY)
-                #            exceptions.loc[name, 'Message'] = \
-                #            secError.getElementAsString(MESSAGE)
-                #        fieldsException = secData.getElement(FIELD_EXCEPTIONS)
-                #        for fieldEx in fieldsException.values():
-                #            if fieldEx.hasElement(FIELD_ID):
-                #                fieldId = fieldEx.getElementAsString(FIELD_ID)
-                #                errorInfo = fieldEx.getElement(ERROR_INFO)
-                #                exceptions.loc[name, 'Field'] = fieldId
-                #                exceptions.loc[name, 'Category'] = \
-                #                errorInfo.getElementAsString(CATEGORY)
-                #                exceptions.loc[name, 'Subcategory'] = \
-                #                errorInfo.getElementAsString(SUBCATEGORY)
-                #                exceptions.loc[name, 'Message'] = \
-                #                errorInfo.getElementAsString(MESSAGE)
             if ev.eventType() == blp.Event.RESPONSE:
                 break
         data = pd.concat(datadict.values(), keys=datadict.keys(), axis=1)

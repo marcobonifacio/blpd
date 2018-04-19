@@ -142,9 +142,27 @@ def test_bdh_list_verbose():
     conn.close()
 
 
+def test_bdh_list_bad_sec_verbose():
+    """ Test BDH function, verbose mode. """
+    conn = blpd.BLP(verbose=True)
+    df, ex = conn.bdh(['UCG IM Equity', 'UCT IM Equity'], ['PX_LAST', 'CUR_MKT_CAP'], '20180410')
+    print(df)
+    print(ex)
+    conn.close()
+
+
+def test_bdh_list_bad_fld_verbose():
+    """ Test BDH function, verbose mode. """
+    conn = blpd.BLP(verbose=True)
+    df, ex = conn.bdh(['UCG IM Equity', 'ISP IM Equity'], ['PX_LAST', 'PX_LAPT'], '20180410')
+    print(df)
+    print(ex)
+    conn.close()
+
+
 def main():
     """ Run the tests. """
-    test_bdh_list_verbose()
+    test_bdh_list_bad_sec_verbose()
 
 
 if __name__ == '__main__':

@@ -1,7 +1,9 @@
 import blpapi as blp
-import datetime as dt
 import pandas as pd
 from typing import Union
+
+
+basestring = (str, bytes)
 
 
 SECURITY_DATA = blp.Name('securityData')
@@ -34,17 +36,15 @@ def _formatSecurity(security: str, prefix: str) -> str:
 def _formatSecsList(securities: list, prefix: Union[str, list]) -> list:
     """ Format a list of securities in a valid Bloomberg syntax. """
     output = []
-    if isinstance(prefix, str):
+    if isinstance(prefix, basestring):
         for s in securities:
             output.append(_formatSecurity(s, prefix))
-    elif isinstance(prefix, list):
+    else:
         if len(prefix) == len(securities):
             for s, p in zip(securities, prefix):
                 output.append(_formatSecurity(s, p))
         else:
             print('Securities and prefixes length do not match') # Raise error
-    else:
-        print('Prefix type is not correct') # Raise error
     return(output)
 
 
@@ -96,24 +96,20 @@ class BLP():
 
     def _addSecurities(self) -> None:
         """ Add a list of securities to a request. """
-        if isinstance(self.securities, str):
+        if isinstance(self.securities, basestring):
             self.securities = [self.securities]
-        elif isinstance(self.securities, list):
-            pass
         else:
-            print('Securities must be a string or a list') # Raise error
+            pass
         for sec in _formatSecsList(self.securities, self.prefix):
             self.request.append('securities', sec)
 
 
     def _addFields(self) -> None:
         """ Add a list of fields to a request. """
-        if isinstance(self.fields, str):
+        if isinstance(self.fields, basestring):
             self.fields = [self.fields]
-        elif isinstance(self.fields, list):
-            pass
         else:
-            print('Fields must be a string or a list') # Raise error
+            pass
         for fld in self.fields:
             self.request.append('fields', fld)
 
@@ -233,7 +229,7 @@ class BLP():
 
     def bdp(self, securities: Union['str', 'list'],
     fields: Union['str', 'list'], prefix: Union['str', 'list']='ticker',
-    overrides: dict=None) -> pd.DataFrame:
+    overrides: dict=None, swap: bool=False) -> pd.DataFrame:
         """ Send a reference request to Bloomberg (mimicking Excel function
         BDP). """
         self.request = self.refDataService.createRequest('ReferenceDataRequest')
@@ -288,7 +284,10 @@ class BLP():
                                 errorInfo.getElementAsString(MESSAGE)
             if ev.eventType() == blp.Event.RESPONSE:
                 break
-        return(data, exceptions)
+        if swap is False:
+            return(data, exceptions)
+        else:
+            return(data.T, exceptions)
 
 
     def bdh(self, securities: Union['str', 'list'],
@@ -297,7 +296,7 @@ class BLP():
     dtFmt: bool=False, days: str='W', fill: str='P', per: str='CD',
     points: int=None, qtTyp: str='Y', quote: str='C', useDPDF: bool=True,
     cshAdjAbnormal: bool=None, capChg: bool=None, cshAdjNormal: bool=None,
-    overrides: dict=None) -> pd.DataFrame:
+    overrides: dict=None, swap: bool=False) -> pd.DataFrame:
         """ Send a historical request to Bloomberg (mimicking Excel function
         BDH). """
         self.request = self.refDataService.createRequest('HistoricalDataRequest')
@@ -378,4 +377,7 @@ class BLP():
             if ev.eventType() == blp.Event.RESPONSE:
                 break
         data = pd.concat(datadict.values(), keys=datadict.keys(), axis=1)
-        return(data, exceptions)
+        if swap is False:
+            return(data, exceptions)
+        else:
+            return(data.swaplevel(axis=1), exceptions)

@@ -1,0 +1,28 @@
+package:
+  name: blpd
+  version: "0.1"
+
+source:
+  git_rev: 0.1
+  git_url: https://github.com/mbonix/blpd.git
+
+requirements:
+  host:
+    - python
+    - setuptools
+    - blpapi
+    - pandas
+
+  run:
+    - python
+    - blpapi
+    - pandas
+
+test:
+  imports:
+    - blpd
+
+about:
+  home: https://github.com/mbonix/blpd
+  license: MIT
+  license_file: LICENSE

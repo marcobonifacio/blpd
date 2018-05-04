@@ -229,7 +229,7 @@ class BLP():
 
     def bdp(self, securities: Union['str', 'list'],
     fields: Union['str', 'list'], prefix: Union['str', 'list']='ticker',
-    overrides: dict=None, swap: bool=False) -> pd.DataFrame:
+    overrides: dict=None, swap: bool=False, errors: bool=False) -> pd.DataFrame:
         """ Send a reference request to Bloomberg (mimicking Excel function
         BDP). """
         self.request = self.refDataService.createRequest('ReferenceDataRequest')
@@ -285,9 +285,15 @@ class BLP():
             if ev.eventType() == blp.Event.RESPONSE:
                 break
         if swap is False:
-            return(data, exceptions)
+            if errors is False:
+                return(data)
+            else:
+                return(data, exceptions)
         else:
-            return(data.T, exceptions)
+            if errors is False:
+                return(data.T)
+            else:
+                return(data.T, exceptions)
 
 
     def bdh(self, securities: Union['str', 'list'],
@@ -296,7 +302,7 @@ class BLP():
     dtFmt: bool=False, days: str='W', fill: str='P', per: str='CD',
     points: int=None, qtTyp: str='Y', quote: str='C', useDPDF: bool=True,
     cshAdjAbnormal: bool=None, capChg: bool=None, cshAdjNormal: bool=None,
-    overrides: dict=None, swap: bool=False) -> pd.DataFrame:
+    overrides: dict=None, swap: bool=False, errors: bool=False) -> pd.DataFrame:
         """ Send a historical request to Bloomberg (mimicking Excel function
         BDH). """
         self.request = self.refDataService.createRequest('HistoricalDataRequest')
@@ -378,6 +384,12 @@ class BLP():
                 break
         data = pd.concat(datadict.values(), keys=datadict.keys(), axis=1)
         if swap is False:
-            return(data, exceptions)
+            if errors is False:
+                return(data)
+            else:
+                return(data, exceptions)
         else:
-            return(data.swaplevel(axis=1), exceptions)
+            if errors is False:
+                return(data.swaplevel(axis=1))
+            else:
+                return(data.swaplevel(axis=1), exceptions)

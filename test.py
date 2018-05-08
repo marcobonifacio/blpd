@@ -44,7 +44,7 @@ def test_bdp_string_overrides_verbose():
 def test_bdp_string_bad_sec_verbose():
     """ Test BDP function with bad security ticker. """
     conn = blp.BLP(verbose=True)
-    df, ex = conn.bdp('UCT IM Equity', 'NAME')
+    df, ex = conn.bdp('UCT IM Equity', 'NAME', errors=True)
     print(df)
     print(ex)
     conn.close()
@@ -185,7 +185,7 @@ def test_bdh_list_bad_fld_verbose():
 
 def main():
     """ Run the tests. """
-    test_bdh_list_swap_verbose()
+    test_bdp_string_bad_sec_verbose()
 
 
 if __name__ == '__main__':

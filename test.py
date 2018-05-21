@@ -185,7 +185,7 @@ def test_bdh_list_bad_fld_verbose():
 
 def main():
     """ Run the tests. """
-    test_bdp_string_bad_sec_verbose()
+    test_bdp_list_missing_data_verbose()
 
 
 if __name__ == '__main__':

@@ -57,5 +57,36 @@ class TestBLP(unittest.TestCase):
         pd.util.testing.assert_frame_equal(err, err_)
 
 
+    def test_bdp_two_secs_two_fields(self):
+        data = self.conn.bdp(['UCG IM Equity', 'ISP IM Equity'], ['NAME',
+        'COUNTRY_FULL_NAME'])
+        data_ = pd.DataFrame(columns=['NAME', 'COUNTRY_FULL_NAME'],
+        index=['UCG IM Equity', 'ISP IM Equity'], data=[['UNICREDIT SPA',
+        'ITALY'], ['INTESA SANPAOLO', 'ITALY']])
+        pd.util.testing.assert_frame_equal(data, data_)
+
+
+    def test_bdp_two_secs_two_fields_swapped(self):
+        data = self.conn.bdp(['UCG IM Equity', 'ISP IM Equity'], ['NAME',
+        'COUNTRY_FULL_NAME'], swap=True)
+        data_ = pd.DataFrame(columns=['UCG IM Equity', 'ISP IM Equity'],
+        index=['NAME', 'COUNTRY_FULL_NAME'], data=[['UNICREDIT SPA',
+        'INTESA SANPAOLO'], ['ITALY', 'ITALY']])
+        pd.util.testing.assert_frame_equal(data, data_)
+
+
+    def test_bdp_two_secs_two_fields_one_missing(self):
+        data, err = self.conn.bdp(['UCG IM Equity', 'EI643289@BGN Corp'],
+        ['NAME', 'CPN'], errors=True)
+        data_ = pd.DataFrame(columns=['NAME', 'CPN'],
+        index=['UCG IM Equity', 'EI643289@BGN Corp'], data=[['UNICREDIT SPA',
+        np.NaN], ['UNICREDIT SPA', 6.125]])
+        err_ = pd.DataFrame(columns=['Field', 'Category', 'Subcategory',
+        'Message'], index=['UCG IM Equity'], data=[['CPN', 'BAD_FLD',
+        'NOT_APPLICABLE_TO_REF_DATA', 'Field not applicable to security']])
+        pd.util.testing.assert_frame_equal(data, data_)
+        pd.util.testing.assert_frame_equal(err, err_)
+
+
 if __name__ == '__main__':
     unittest.main()

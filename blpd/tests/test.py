@@ -88,5 +88,36 @@ class TestBLP(unittest.TestCase):
         pd.util.testing.assert_frame_equal(err, err_)
 
 
+    def test_bdh_one_sec_one_field(self):
+        data = self.conn.bdh('UCG IM Equity', 'NET_REV', 'FY2016', 'FY2017',
+        per='FY')
+        data_ = pd.DataFrame(columns=pd.MultiIndex.from_tuples(
+        [('UCG IM Equity', 'NET_REV')]), index=[pd.to_datetime('2016-12-31'),
+        pd.to_datetime('2017-12-31')], data=[[19484.224], [20130.646]])
+        pd.util.testing.assert_frame_equal(data, data_)
+
+
+    def test_bdh_two_secs_two_fields(self):
+        data = self.conn.bdh(['UCG IM Equity', 'ISP IM Equity'], ['NET_REV',
+        'NET_INCOME'], 'FY2016', 'FY2017', per='FY')
+        data_ = pd.DataFrame(columns=pd.MultiIndex.from_product(
+        [['UCG IM Equity', 'ISP IM Equity'], ['NET_REV', 'NET_INCOME']]),
+        index=[pd.to_datetime('2016-12-31'), pd.to_datetime('2017-12-31')],
+        data=[[19484.22, -11790.09, 18168.00, 3111.00], [20130.65, 5473.07,
+        24249.00, 7316.00]])
+        pd.util.testing.assert_frame_equal(data, data_)
+
+
+    def test_bdh_two_secs_two_fields_swapped(self):
+        data = self.conn.bdh(['UCG IM Equity', 'ISP IM Equity'], ['NET_REV',
+        'NET_INCOME'], 'FY2016', 'FY2017', per='FY', swap=True)
+        data_ = pd.DataFrame(columns=pd.MultiIndex.from_product(
+        [['UCG IM Equity', 'ISP IM Equity'], ['NET_REV', 'NET_INCOME']]),
+        index=[pd.to_datetime('2016-12-31'), pd.to_datetime('2017-12-31')],
+        data=[[19484.22, -11790.09, 18168.00, 3111.00], [20130.65, 5473.07,
+        24249.00, 7316.00]]).swaplevel(axis=1)
+        pd.util.testing.assert_frame_equal(data, data_)
+
+
 if __name__ == '__main__':
     unittest.main()
